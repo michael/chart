@@ -52,7 +52,23 @@ Chart = function Chart(element) {
   this.margin = {top: 50, right: 50, bottom: 60, left: 80};
 }
 
-Chart.COLORS = [200, 100, 50]; // [ '#cc9933', '#c572d1', '#8c8061', '#e6df2b', '#3ecbe5', '#ca5e23', '#99cc33' ];
+
+Chart.COLORS = [
+  [177, 102, 73],
+  [171, 199, 49],
+  [128, 142, 137],
+  [131, 127, 67],
+  [171, 199, 49],
+  [144, 150, 60],
+  [134, 162, 169],
+  [162, 195, 85],
+  [154, 191, 123],
+  [147, 186, 161],
+  [141, 181, 200],
+  [177, 102, 73],
+  [122, 122, 104],
+  [157, 175, 55]
+];
 
 Chart.prototype = {
   plotHeight: function() {
@@ -146,7 +162,7 @@ Series.prototype = {
 	},
 	draw: function(p) {
 	  var that = this;
-    p.fill(Chart.COLORS[this.index]);
+    p.fill(p.color.apply(p,Chart.COLORS[this.index]));
     
     // draw points whereby j is the category index
     $.each(this.points, function(j, point) {
