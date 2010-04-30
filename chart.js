@@ -21,7 +21,7 @@ Util = {
         f, // fractional part of x
         nf; // nice, rounded fraction
     
-    exp = Util.extractExponent(x); // instead of floor(log10(x))
+    exp = Util.extractExponent(x); // instead of floor(log10(x)) which doesn't work properly in javascript
     f = x / Math.pow(10, exp); // between 1 and 10
     
     if (round) {
@@ -76,6 +76,10 @@ Chart.prototype = {
     // center the plotarea
     p.translate(this.margin.left, this.margin.top);
     
+    // color for the plot area
+    p.fill(244);
+    p.rect(0,0,this.plotWidth(), this.plotHeight());
+    
     var font = p.loadFont("Century Gothic"); 
     p.textFont(font, 12); 
     
@@ -108,6 +112,10 @@ Chart.prototype = {
     };
     
     this.processingControl = Processing(this.element[0], pjs_code);
+    
+    // debug
+    tinylog.log("xAxis: "+this.xAxis.inspect());
+    tinylog.log("yAxis: "+this.yAxis.inspect());
   }
 }
 
@@ -152,7 +160,7 @@ Series.prototype = {
       var pointXDim = (categoryDim / that.chart.series.length)-pointSpacing-categorySpacing;
       
       var xOffset = Math.round(j*(categoryDim+categorySpacing) + that.index*(pointXDim+pointSpacing));
-      
+            
       p.rect(xOffset,that.chart.plotHeight()-yAxis.translate(point.y), pointXDim, yAxis.translate(point.y));
     });
 	}
@@ -173,6 +181,8 @@ Axis = function(chart, length, isXAxis, options) {
 	this.isXAxis = isXAxis;
 	this.dataMin = Infinity;
 	this.dataMax = -Infinity;
+	
+	// TODO: user set min/max
 
 	// set min and max, tickInterval, scale etc.
 	this.update();
@@ -192,25 +202,24 @@ Axis.prototype = {
     } else {
       // find out min/max on data level
       this.computeDataExtremes();
-      this.computeLooseTicks(this.dataMin, this.dataMax, 9);
+      this.computeLooseTicks(this.dataMin, this.dataMax, 5);
     }
     
     this.setScale();
   },
   // translates the given data value to the corresponding pixel value
   translate: function(value) {
-    return Math.round(value*this.scale);
+    // CAUTION: not sure if -this.graphMin should go here
+    return Math.round((value-this.graphMin)*this.scale);
   },
   // consider all series and find the min/max values
+  // TODO: consider moving this to Chart
   computeDataExtremes: function() {
     var that = this;
     $.each(that.chart.series, function(i, series) {
       that.dataMin = Math.min(that.dataMin, Math.min.apply(this, $.map(series.points, function(p) { return p.y; })));
       that.dataMax = Math.max(that.dataMax, Math.max.apply(this, $.map(series.points, function(p) { return p.y; })));
     });
-    
-    tinylog.log("data minimum:"+ this.dataMin);
-    tinylog.log("data maximum:"+ this.dataMax);
   },
   computeCategoryTicks: function() {
     this.graphMin = 0;
@@ -224,9 +233,11 @@ Axis.prototype = {
     var range;
         
     range = Util.niceNum(max-min, false);
+    
     this.tickInterval = Util.niceNum(range / (desiredNTicks-1), true);
     this.graphMin = Math.floor(min / this.tickInterval)*this.tickInterval;
     this.graphMax = Math.ceil(max / this.tickInterval)*this.tickInterval;
+    
     this.nFract = Math.max(-Util.extractExponent(this.tickInterval),0);
     
     this.nTicks = 0; // how many ticks do actually fit for the nice tickInterval
@@ -247,11 +258,11 @@ Axis.prototype = {
     } else {
       for(var i = 0; i<this.nTicks; i++) {
         p.fill(66);
-        var y = this.chart.plotHeight()-this.translate(i*this.tickInterval);
+        var y = this.chart.plotHeight()-this.translate(i*this.tickInterval+this.graphMin);
         y += 0.5; // needs to be shifted for some reason (probably caused by the PJS patch)
 
         // TODO: only show nFrac fractional digits
-        p.text(i*this.tickInterval, -40, y);
+        p.text(this.graphMin+i*this.tickInterval, -40, y);
         
         p.stroke(180);
         p.strokeWeight(1);
@@ -261,7 +272,7 @@ Axis.prototype = {
     }
   },
   inspect: function() {
-    return "Axis[title="+this.title+", categories="+this.categories+"]"
+    return "Axis[title="+this.title+", categories="+this.categories+", tickInterval="+this.tickInterval+", nTicks="+this.nTicks+", graphMin="+this.graphMin+", graphMax="+this.graphMax+"]"
   }
 }
 

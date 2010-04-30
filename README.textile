@@ -2,9 +2,7 @@ h1. CHART™
 
 CHART™ is a simple charting library based on jQueryUI and the Processing.js visualization framework. 
 It's goal is not to provide a highly customizable widget (in this case you should rather take a look at 
-"Highcharts":http://highcharts.com</a>),
-instead it just uses the raw data to derive suitable plotting options on its own.
-
+"Highcharts":http://highcharts.com</a>), instead it just uses the raw data to derive suitable plotting options on its own.
 
 h2. Misc
 
