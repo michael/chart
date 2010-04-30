@@ -1,0 +1,99 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<head> 
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/> 
+	<title>CHART™ - jQuery UI on Processing.js</title> 
+	<link rel="stylesheet" href="style.css" type="text/css" />
+  <!-- jQuery Library -->
+  <script src="./lib/jquery-1.4.2.min.js"></script>
+  <!-- jQuery UI Library -->
+  <script src="./lib/jquery-ui-1.8.custom.min.js"></script>
+  <!-- Processing.js Animation Library -->
+  <script src="./lib/processing-0.8-patched.js"></script>
+  <!-- Load Processing.js libraries -->
+  <script src="Tween.lib"></script>
+  
+  <script src="chart.js"></script>
+  
+	<script type="text/javascript">
+		$(function() {
+      $("#chart").chart({
+        xAxis: {
+          categories: ['Apples', 'Oranges', 'Pears', 'Grapes', 'Bananas', 'Pineapples']
+        },
+        yAxis: {
+          title: 'Total fruit consumption'
+        },
+        series: [{
+         name: 'Michael',
+         data: [160, 220, 300, 311,202, 10]
+       }, {
+         name: 'Martin',
+         data: [105, 150, 300, 250, 543, 20]
+       }, {
+         name: 'Milan',
+         data: [311, 433, 400, 211, 124, 50]
+       }]
+      });
+      
+		});
+	</script>
+</head>
+<body>
+<a href="http://github.com/michael/chart"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_white_ffffff.png" alt="Fork me on GitHub" /></a>
+ 
+<div id="wrapper">
+	<div id="header"> 
+		<h1>CHART™ - jQueryUI on Processing.js</h1> 
+		<p>
+		   A <em>HTML5</em> based visualization realized with the so great <a href="http://processingjs.org">Processing.js</a> framework.
+		</p> 
+		
+		<ul id="nav">
+      <li><a href="http://github.com/michael/chart">Source</a></li>
+      <li><a href="http://github.com/michael/chart/zipball/master">Download</a></li>
+      <li><a href="http://github.com/michael/chart/issues">Bugs</a></li>
+		</ul>
+	</div>
+	
+	<div id="content">
+    <canvas id="chart">
+    </canvas>
+    
+    <h2>Description</h2>
+    <p>
+      CHART™ is a simple charting library based on jQueryUI and the Processing.js visualization framework. 
+      It's goal is not to provide a highly customizable widget (in this case you should rather take a look at <a href="http://highcharts.com">Highcharts</a>),
+      instead it just uses the raw data to derive suitable plotting options on its own.
+      
+      Source code is available at <a href="http://github.com/michael/chart/" title="Social Coding">Github</a>.
+    </p>
+    
+    <h2>Misc</h2>
+    <p>
+      I hope someone finds it useful and can make practical use of it. Feel free to modify the code, but please show me your improvements. ;)
+      If you spot some bugs please add them to the <a href="http://github.com/michael/chart/issues">issue tracker</a>.
+    </p>
+    <p>
+      There are no limitations. Do whatever you want with this sketch.
+      If you did some nice modifications, just let me know (via Github). I'd be happy to include them.
+    </p>
+	</div> 
+ 
+	<div id="footer">
+		<p class="left">A <a href="http://quasipartikel.at/">Quasipartikel</a> Production</p>
+		<p class="right">Template adopted from <a href="http://orderedlist.com/demos/fancy-zoom-jquery/">orderedlist.com</a></p>
+		<br class="clear"/>
+	</div>
+</div>
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-10368067-1");
+pageTracker._trackPageview();
+} catch(err) {}</script>
+</body> 
+</html>
