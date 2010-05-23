@@ -1,354 +1,299 @@
-/***************************************************************/
-/* Pull in tinylog (nasty Hack)                                 
-/***************************************************************/
+//-----------------------------------------------------------------------------
+// Collection API
+// Represents a collection of items
+// Collections can be grouped and aggregated to generate diverse views
+//-----------------------------------------------------------------------------
 
-var tinylog = {}
 
-$(function() {
-  tinylog.log = Processing(document.getElementById('chart'), function(p) {}).println
-});
+/*jslint white: true, browser: true, rhino: true, onevar: true, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: true, indent: 2 */
+"use strict";
 
-/***************************************************************/
-/* Utility functions                                                      
-/***************************************************************/
 
-Util = {
-  extractExponent: function(x) {
-    return parseInt(x.toExponential().split("e")[1]);
-  },
-  niceNum: function(x, round) {
-    var exp, // exponent of x
-        f, // fractional part of x
-        nf; // nice, rounded fraction
-    
-    exp = Util.extractExponent(x); // instead of floor(log10(x)) which doesn't work properly in javascript
-    f = x / Math.pow(10, exp); // between 1 and 10
-    
-    if (round) {
-      if (f < 1.5) nf = 1;
-      else if (f < 3) nf = 2;
-      else if (f < 7) nf = 5;
-      else nf = 10;
-    } else {
-      if (f <= 1) nf = 1;
-      else if (f <= 2) nf = 2;
-      else if (f <= 5) nf = 5;
-      else nf = 10;
+//-----------------------------------------------------------------------------
+// Aggregators
+//-----------------------------------------------------------------------------
+
+var Aggregators = {};
+
+Aggregators.SUM = function (key, items) {
+  var result = 0;
+  items.each(function (i, item) {
+    result += item.attributes[key];
+  });
+  return result;
+};
+
+Aggregators.MIN = function (key, items) {
+  var result = Infinity;
+  items.each(function (i, item) {
+    if (item.attributes[key] < result) {
+      result = item.attributes[key];
     }
-    return nf*Math.pow(10, exp);
-  }
-}
+  });
+  return result;
+};
 
-/***************************************************************/
-/* Chart                                                      
-/***************************************************************/
+Aggregators.MAX = function (key, items) {
+  var result = -Infinity;
+  items.each(function (i, item) {
+    if (item.attributes[key] > result) {
+      result = item.attributes[key];
+    }
+  });
+  return result;
+};
 
-Chart = function Chart(element) {
-  this.element = element;
-  this.height = element.height();
-  this.width = element.width();
-  this.series = [];
-
-  this.margin = {top: 50, right: 50, bottom: 60, left: 80};
-}
+Aggregators.COUNT = function (key, items) {
+  var result = 0;
+  return items.length;
+};
 
 
-Chart.COLORS = [
-  [177, 102, 73],
-  [171, 199, 49],
-  [128, 142, 137],
-  [131, 127, 67],
-  [171, 199, 49],
-  [144, 150, 60],
-  [134, 162, 169],
-  [162, 195, 85],
-  [154, 191, 123],
-  [147, 186, 161],
-  [141, 181, 200],
-  [177, 102, 73],
-  [122, 122, 104],
-  [157, 175, 55]
-];
+//-----------------------------------------------------------------------------
+// Modifiers
+//-----------------------------------------------------------------------------
 
-Chart.prototype = {
-  plotHeight: function() {
-    return this.height-(this.margin.top+this.margin.bottom);
-  },
-  plotWidth: function() {
-    return this.width-(this.margin.left+this.margin.right);
-  },
-  addSeries: function(series) {
-    this.series.push(series);
-  },
-  setupAxes: function(options) {    
-    this.xAxis = new Axis(this, this.plotWidth(), true, options.xAxis);
-    this.yAxis = new Axis(this, this.plotHeight(), false, options.yAxis);
-  },
-  // called in chart obj context
-  draw: function(p) {
-    p.background(255);
-    p.smooth();
-    
-    // center the plotarea
-    p.translate(this.margin.left, this.margin.top);
-    
-    // color for the plot area
-    p.fill(244);
-    p.rect(0,0,this.plotWidth(), this.plotHeight());
-    
-    var font = p.loadFont("Century Gothic"); 
-    p.textFont(font, 12); 
-    
-    // draw xAxis
-    this.xAxis.draw(p);
-    
-    // draw yAxis
-    this.yAxis.draw(p);
-    
-    // draw series
-    $.each(this.series, function(i, series) {
-      series.draw(p);
+var Modifiers = {};
+
+// The default modifier simply does nothing
+Modifiers.DEFAULT = function (attribute) {
+  return attribute;
+};
+
+Modifiers.MONTH = function (attribute) {
+  return attribute.getMonth();
+};
+
+Modifiers.QUARTER = function (attribute) {
+  return Math.floor(attribute.getMonth() / 3) + 1;
+};
+
+
+//-----------------------------------------------------------------------------
+// Item
+//-----------------------------------------------------------------------------
+
+var Item = function (chart, attributes) {
+  this.attributes = attributes;
+};
+
+Item.prototype = {
+  groupMembership: function (groupKeys) {
+    var membership = [],
+        that = this;
+        
+    groupKeys.each(function (i, groupKey) {
+      membership.push(groupKey.modifier(that.attributes[groupKey.property]));
     });
-    
-    p.exit();
-  },
-  render: function() {
-    var elem = this.element;
-    var that = this;
-    
-    var pjs_code = function(p) {
-  		p.setup = function() {
-  			p.size(elem.width(), elem.height());
-  			p.noStroke();
-  			p.frameRate(60);
-  		}
-    
-      p.draw = function() { that.draw(p) };
-      p.init();
-    };
-    
-    this.processingControl = Processing(this.element[0], pjs_code);
-    
-    // debug
-    tinylog.log("xAxis: "+this.xAxis.inspect());
-    tinylog.log("yAxis: "+this.yAxis.inspect());
+    return membership;
   }
-}
+};
+
+//-----------------------------------------------------------------------------
+// Property
+//-----------------------------------------------------------------------------
 
 
-/***************************************************************/
-/* Series                                                      
-/***************************************************************/
-
-var Series = function(chart, index, seriesOptions) {
+var Property = function (chart, key, options) {
   // constructing 
   this.chart = chart;
+  this.key = key;
+  this.name = options.name;
+  this.type = options.type;
+};
+
+
+//-----------------------------------------------------------------------------
+// Collection
+//-----------------------------------------------------------------------------
+
+var Collection = function (options) {
+  this.id = options.id;
+  this.name = options.name;
   
-  this.index = index;
-  this.points = [];
-  this.name = seriesOptions.name;
+  this.properties = {};
+  this.items = [];
+  var that = this;
   
-  that = this;
+  // init properties
+  options.properties.each(function (key, options) {
+    that.properties[key] = new Property(that, key, options);
+  });
   
-  // initialize data points
-  $.each(seriesOptions.data, function(idx, p) {
-    that.points.push(new Point(that, p));
+  options.items.each(function (i, item) {
+    that.items.push(new Item(that, item.attributes));
   });
 };
 
-Series.prototype = {
-	destroy: function() {
-	  // TODO: implement
-	},
-	draw: function(p) {
-	  var that = this;
-    p.fill(p.color.apply(p,Chart.COLORS[this.index]));
+Collection.prototype = {
+  // build groups based on groupKeys
+  getGroups: function (groupKeys) {
+    var that = this,
+        groups = {},
+        idx = 0; // the groupIndex
     
-    // draw points whereby j is the category index
-    $.each(this.points, function(j, point) {
-      var yAxis = that.chart.yAxis, 
-          xAxis = that.chart.xAxis,
-          height = that.chart.height;
-
-      var categoryDim = that.chart.plotWidth() / xAxis.categories.length;
-      var categorySpacing = categoryDim*0.04;
-      var pointSpacing = 5;
-      var pointXDim = (categoryDim / that.chart.series.length)-pointSpacing-categorySpacing;
-      
-      var xOffset = Math.round(j*(categoryDim+categorySpacing) + that.index*(pointXDim+pointSpacing));
-            
-      p.rect(xOffset,that.chart.plotHeight()-yAxis.translate(point.y), pointXDim, yAxis.translate(point.y));
+    this.items.each(function (i, item) {
+      var membership = item.groupMembership(groupKeys);
+      groups[membership] = groups[membership] || { items: [], index: idx += 1 };
+      groups[membership].items.push(item);      
+    });    
+    return groups;
+  },
+  aggregate: function (items, properties, groupKeys) {
+    var aggregatedItem = {},
+        that = this;
+    
+    // include group key attributes
+    groupKeys.each(function (i, gk) {
+      aggregatedItem[gk.property] = items[0].attributes[gk.property];
     });
-	}
-};
-
-
-/***************************************************************/
-/* Axis                                                      
-/***************************************************************/
-
-
-Axis = function(chart, length, isXAxis, options) {
-	this.chart = chart;
-	this.title = options.title;
-	this.length = length; // the axis total length (in pixels)
-	this.categories = options.categories;
-	
-	this.isXAxis = isXAxis;
-	this.dataMin = Infinity;
-	this.dataMax = -Infinity;
-	
-	// TODO: user set min/max
-
-	// set min and max, tickInterval, scale etc.
-	this.update();
-
-} // end Axis
-
-Axis.prototype = {
-  /**
-   * Get the minimum and maximum for the series of each axis 
-   * a series can belong to an axis. in our case it's always the x-axis
-   */
-  update: function() {
-
-    // calculate
-    if (this.isXAxis) {
-      this.computeCategoryTicks();
-    } else {
-      // find out min/max on data level
-      this.computeDataExtremes();
-      this.computeLooseTicks(this.dataMin, this.dataMax, 5);
-    }
     
-    this.setScale();
-  },
-  // translates the given data value to the corresponding pixel value
-  translate: function(value) {
-    // CAUTION: not sure if -this.graphMin should go here
-    return Math.round((value-this.graphMin)*this.scale);
-  },
-  // consider all series and find the min/max values
-  // TODO: consider moving this to Chart
-  computeDataExtremes: function() {
-    var that = this;
-    $.each(that.chart.series, function(i, series) {
-      that.dataMin = Math.min(that.dataMin, Math.min.apply(this, $.map(series.points, function(p) { return p.y; })));
-      that.dataMax = Math.max(that.dataMax, Math.max.apply(this, $.map(series.points, function(p) { return p.y; })));
+    properties.each(function (i, p) {
+      aggregatedItem[p.property] = p.aggregator(p.property, items);
     });
+    return aggregatedItem;
   },
-  computeCategoryTicks: function() {
-    this.graphMin = 0;
-    this.graphMax = this.categories.length-1;
-    
-    this.tickInterval = 1;
-    this.nFract = 0;
-    this.nTicks = this.categories.length;
-  },
-  computeLooseTicks: function(min, max, desiredNTicks) {
-    var range;
-        
-    range = Util.niceNum(max-min, false);
-    
-    this.tickInterval = Util.niceNum(range / (desiredNTicks-1), true);
-    this.graphMin = Math.floor(min / this.tickInterval)*this.tickInterval;
-    this.graphMax = Math.ceil(max / this.tickInterval)*this.tickInterval;
-    
-    this.nFract = Math.max(-Util.extractExponent(this.tickInterval),0);
-    
-    this.nTicks = 0; // how many ticks do actually fit for the nice tickInterval
-    for (var x = this.graphMin; x <= this.graphMax+0.5*this.tickInterval; x += this.tickInterval) {
-      this.nTicks += 1;
-    }
-  },
-  /**
-   * Set the scale based on data min and max, user set min and max or options
-   */
-  setScale: function() {
-    // is just a factor, each data value is multiplied with the scale value to fit on display
-    this.scale = this.length / (this.graphMax-this.graphMin);
-  },
-  draw: function(p) {
-    if (this.isXAxis) {
-      
-    } else {
-      for(var i = 0; i<this.nTicks; i++) {
-        p.fill(66);
-        var y = this.chart.plotHeight()-this.translate(i*this.tickInterval+this.graphMin);
-        y += 0.5; // needs to be shifted for some reason (probably caused by the PJS patch)
+  // @param groupKeys
+  //      example [{property: '1', modifier: Modifiers.DEFAULT}]
+  //      TODO: allow groupkeys to just be an array of property keys
+  // 
+  // @param properties [Optional]
+  //      example [{property: '5', aggregator: Aggregators.SUM}]
+  group: function (options) {
+    var groups = this.getGroups(options.keys),
+        that = this,
+        newProps = {},
+        newItems = [];
 
-        // TODO: only show nFrac fractional digits
-        p.text(this.graphMin+i*this.tickInterval, -40, y);
-        
-        p.stroke(180);
-        p.strokeWeight(1);
-        p.line(0, y, this.chart.plotWidth(), y);
-        p.strokeWeight(0);
-      }
-    }
-  },
-  inspect: function() {
-    return "Axis[title="+this.title+", categories="+this.categories+", tickInterval="+this.tickInterval+", nTicks="+this.nTicks+", graphMin="+this.graphMin+", graphMax="+this.graphMax+"]"
+    // property projection
+    options.keys.each(function (i, key) {
+      newProps[key.property] = that.properties[key.property];
+    });
+    
+    options.properties.each(function (i, key) {
+      newProps[key.property] = that.properties[key.property];
+    });
+    
+    groups.each(function (k, group) {
+      newItems.push(that.aggregate(group.items, options.properties, options.keys));
+    });
+
+    return new Collection({properties: newProps, items: newItems});
   }
-}
-
-
-/***************************************************************/
-/* Point                                                      
-/***************************************************************/
-
-
-var Point = function(series, value) {
-  this.x = null;
-  this.series = series;
-  this.y = value; // sufficient for bar charts
 };
 
-Point.prototype = {
-	/**
-	 * make human readable
-	 */
-	inspect: function() {
-    return "Point[series="+this.series.name+", x="+this.x+", y=x="+this.y+"]"
-	},
-	
-	/**
-	 * Clear memory
-	 */
-	destroy: function() {
-    // TODO: implement
-	}
+// @depends collection/collection.js
+
+/*jslint white: true, browser: true, rhino: true, onevar: true, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: true, indent: 2 */
+/*global Aggregators: true, alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false */
+"use strict";
+
+
+//-----------------------------------------------------------------------------
+// Measure
+//-----------------------------------------------------------------------------
+
+// a measure is one dimension of the data item to be plotted.
+var Measure = function (chart, property, index) {
+  this.property = property;
+  this.chart = chart;
+  this.index = index;
+  this.dataMin = Infinity;
+  this.dataMax = -Infinity;
+  
+  // compute dataMin and dataMax
+  this.computeDataExtremes();
 };
 
-
-/***************************************************************/
-/* The widget                                                      
-/***************************************************************/
-
-$.widget("ui.chart", {
-  // default options
-  options: {
-    
-  },
-  _create: function() {
-    // TODO: this should all go to to the Chart constructor
-    
-    // init chart object
-    this.chart = new Chart(this.element, this.options);
+Measure.prototype = {
+  values: function () {
     var that = this;
+    return that.chart.collection.items.map(function (i) {
+      return i.attributes[that.property.key];
+    });
+  },
+  key: function () {
+    return this.property.key;
+  },
+  min: function () {
+    return this.dataMin;
+  },
+  max: function () {
+    return this.dataMax;
+  },
+  // consider all items and find the min/max values
+  computeDataExtremes: function () {
+    var that = this;
+    
+    that.chart.collection.items.each(function (i, item) {
+      that.dataMin = Math.min(that.dataMin, item.attributes[that.property.key]);
+      that.dataMax = Math.max(that.dataMax, item.attributes[that.property.key]);
+    });
+  },
+  inspect: function () {
+    return "Measure[property=" + this.property.key + " (" + this.property.name + ")]";
+  }
+};
 
-    // init series
-    $.each(this.options.series || [], function(idx, seriesOptions) {
-      that.chart.addSeries(new Series(that.chart, idx, seriesOptions));
+//-----------------------------------------------------------------------------
+// Chart
+//-----------------------------------------------------------------------------
+
+var Chart = function (element, options) {
+  this.element = element;
+  this.height = element.height();
+  this.width = element.width();
+  this.collection = options.collection;
+  this.visualization = options.plotOptions.visualization;
+  
+  // TODO: use extracted groupKeys for identification if no identityKeys are provided
+  this.identityKeys = options.plotOptions.identifyBy || [];
+  this.groupKeys = options.plotOptions.groupBy || [];
+
+  this.measures = [];
+  this.margin = {top: 50, right: 50, bottom: 60, left: 80};
+  var that = this;
+  
+  if (options.plotOptions.aggregated) {
+    this.groupProperties = options.plotOptions.measures.map(function (k) {
+      return { property: k, aggregator: Aggregators.SUM };
     });
     
-    // setup axis
-    this.chart.setupAxes(this.options);
-    
-    // render the chart
-    this.chart.render();
-  },
-  destroy: function() {
-    $.Widget.prototype.destroy.apply(this, arguments);
+    this.collection = this.collection.group({
+      keys: this.groupKeys,
+      properties: this.groupProperties
+    });
   }
-});
+  
+  // TODO: skip if there are no groupKeys provided
+  this.groups = this.collection.getGroups(this.groupKeys);
+  
+  // init measures
+  options.plotOptions.measures.each(function (i, propertyKey) {
+    that.measures.push(new Measure(that, that.collection.properties[propertyKey], i));
+  });
+};
+
+// The is where concrete visualizations have to register
+Chart.visualizations = {};
+
+Chart.prototype = {
+  plotHeight: function () {
+    return this.element.height() - (this.margin.top + this.margin.bottom);
+  },
+  plotWidth: function () {
+    return this.element.width() - (this.margin.left + this.margin.right);
+  },
+  render: function () {
+    var vis = Chart.visualizations[this.visualization].create(this);
+    vis.render();
+  },
+  // returns an items identity as a string based on this.identityKeys
+  identify: function (item) {
+    var that = this;
+    this.identityKeys.map(function (s) {
+      return item.attributes[s];
+    }).join(", ");
+  }
+};
+
