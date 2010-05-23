@@ -1,56 +1,3 @@
-// @depends collection/collection.js
-
-/*jslint white: true, browser: true, rhino: true, onevar: true, undef: true, nomen: true, eqeqeq: true, plusplus: true, bitwise: true, regexp: true, newcap: true, immed: true, strict: true, indent: 2 */
-/*global Aggregators: true, alert: false, confirm: false, console: false, Debug: false, opera: false, prompt: false */
-"use strict";
-
-
-//-----------------------------------------------------------------------------
-// Measure
-//-----------------------------------------------------------------------------
-
-// a measure is one dimension of the data item to be plotted.
-var Measure = function (chart, property, index) {
-  this.property = property;
-  this.chart = chart;
-  this.index = index;
-  this.dataMin = Infinity;
-  this.dataMax = -Infinity;
-  
-  // compute dataMin and dataMax
-  this.computeDataExtremes();
-};
-
-Measure.prototype = {
-  values: function () {
-    var that = this;
-    return that.chart.collection.items.map(function (i) {
-      return i.attributes[that.property.key];
-    });
-  },
-  key: function () {
-    return this.property.key;
-  },
-  min: function () {
-    return this.dataMin;
-  },
-  max: function () {
-    return this.dataMax;
-  },
-  // consider all items and find the min/max values
-  computeDataExtremes: function () {
-    var that = this;
-    
-    that.chart.collection.items.each(function (i, item) {
-      that.dataMin = Math.min(that.dataMin, item.attributes[that.property.key]);
-      that.dataMax = Math.max(that.dataMax, item.attributes[that.property.key]);
-    });
-  },
-  inspect: function () {
-    return "Measure[property=" + this.property.key + " (" + this.property.name + ")]";
-  }
-};
-
 //-----------------------------------------------------------------------------
 // Chart
 //-----------------------------------------------------------------------------
@@ -62,15 +9,14 @@ var Chart = function (element, options) {
   this.collection = options.collection;
   this.visualization = options.plotOptions.visualization;
   
-  // TODO: use extracted groupKeys for identification if no identityKeys are provided
-  this.identityKeys = options.plotOptions.identifyBy || [];
-  this.groupKeys = options.plotOptions.groupBy || [];
-
+  this.identityKeys = options.plotOptions.identifyBy;
+  this.groupKeys = options.plotOptions.groupBy;
+  
   this.measures = [];
   this.margin = {top: 50, right: 50, bottom: 60, left: 80};
   var that = this;
   
-  if (options.plotOptions.aggregated) {
+  if (options.plotOptions.aggregated && this.groupKeys.length > 0) {
     this.groupProperties = options.plotOptions.measures.map(function (k) {
       return { property: k, aggregator: Aggregators.SUM };
     });
@@ -79,16 +25,30 @@ var Chart = function (element, options) {
       keys: this.groupKeys,
       properties: this.groupProperties
     });
+    
+    // set identityKeys to groupKey unless set
+    if (this.identityKeys.length === 0) {
+      this.identityKeys = $.map(this.groupKeys, function (ik) {
+        return ik.property;
+      });      
+    }
+  }
+  
+  // use first property key as default identity
+  if (this.identityKeys.length === 0) {
+    this.identityKeys.push(this.getFirstPropertyKey());
   }
   
   // TODO: skip if there are no groupKeys provided
   this.groups = this.collection.getGroups(this.groupKeys);
   
   // init measures
-  options.plotOptions.measures.each(function (i, propertyKey) {
-    that.measures.push(new Measure(that, that.collection.properties[propertyKey], i));
+  options.plotOptions.measures.eachItem(function (propertyKey, index) {
+    that.measures.push(new Measure(that, that.collection.properties[propertyKey], index));
   });
 };
+
+
 
 // The is where concrete visualizations have to register
 Chart.visualizations = {};
@@ -106,9 +66,18 @@ Chart.prototype = {
   },
   // returns an items identity as a string based on this.identityKeys
   identify: function (item) {
-    var that = this;
-    this.identityKeys.map(function (s) {
+    var that = this,
+        identityKeys = this.identityKeys;
+
+    return $.map(identityKeys, function (s) {
       return item.attributes[s];
     }).join(", ");
+  },
+  getFirstPropertyKey: function () {
+    var keys = [];
+    $.each(this.collection.properties, function (key, val) {
+      keys.push(key);
+    });
+    return keys[0];
   }
 };
