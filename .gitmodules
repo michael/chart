@@ -1,0 +1,3 @@
+[submodule "src/collection"]
+	path = src/collection
+	url = git@github.com:michael/collection.git
