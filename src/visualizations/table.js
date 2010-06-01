@@ -13,27 +13,37 @@ var Table = function(chart) {
 
 Table.prototype = {
   render: function() {
+    $('#chart').html(this.renderCollection(this.chart.collectionView));
+  },
+  renderItem: function(i) {
+    var that = this;
+    str = '<tr>';
+    $.each(i.get("attributes"), function(key, attr) {
+      if (i.type(key) === 'collection') {
+        str += '<td>'+that.renderCollection(i.node(key))+'</td>';
+      } else {
+        str += '<td>'+i.value(key)+'</td>';
+      }
+    });
+    str += '</tr>';
+    return str;
+  },
+  renderCollection: function(c) {
+    var that = this;
     
     str = '<table><thead><tr>';
-    
-    $.each(this.chart.collection.properties, function(key, p) {
-      str += '<th>'+p.name+'</th>';
+    c.list("properties").each(function(index, p) {
+      str += '<th>'+p.name()+'</th>';
     });
     
     str += '</tr></thead><tbody>';
     
-    $.each(this.chart.collection.items, function(i, item) {
-      str += '<tr>';
-      
-      $.each(item.attributes, function(key, a) {
-        str += '<td>'+a+'</td>';
-      });
-      
-      str += '</tr>';
+    c.list("items").each(function(index, item) {
+      str += that.renderItem(item);
     });
     
     str += '</tbody></table>';
-    
-    $('#chart').html(str);
+    return str;
   }
 };
+

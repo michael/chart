@@ -15,14 +15,8 @@ var Measure = function (chart, property, index) {
 };
 
 Measure.prototype = {
-  values: function () {
-    var that = this;
-    return that.chart.collection.items.map(function (i) {
-      return i.attributes[that.property.key];
-    });
-  },
   key: function () {
-    return this.property.key;
+    return this.property.key();
   },
   min: function () {
     return this.dataMin;
@@ -30,16 +24,21 @@ Measure.prototype = {
   max: function () {
     return this.dataMax;
   },
+  collectionView: function() {
+    return this.chart.collectionView;
+  },
   // consider all items and find the min/max values
   computeDataExtremes: function () {
     var that = this;
     
-    that.chart.collection.items.eachItem(function (item) {
-      that.dataMin = Math.min(that.dataMin, item.attributes[that.property.key]);
-      that.dataMax = Math.max(that.dataMax, item.attributes[that.property.key]);
+    var items = that.collectionView().get("items");
+    
+    $.each(items, function(key, item) {      
+      that.dataMin = Math.min(that.dataMin, item.value(that.property.key()));
+      that.dataMax = Math.max(that.dataMax, item.value(that.property.key()));
     });
   },
   inspect: function () {
-    return "Measure[property=" + this.property.key + " (" + this.property.name + ")]";
+    return "Measure[property=" + this.property.key + " dataMin=" +this.dataMin+ ", dataMax=" + this.dataMax +"]";
   }
 };

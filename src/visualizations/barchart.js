@@ -10,7 +10,7 @@ var Barchart = function (chart) {
   this.chart = chart;
 };
 
-// register
+// register on the chart object
 Chart.visualizations.barchart = {
   className: 'Barchart',
   create: function (chart) {
@@ -25,10 +25,10 @@ Barchart.prototype = {
         h = this.chart.plotHeight(),    
         yAxis = this.chart.measures[0],
         that = this,
-        data = this.chart.collection.items,
+        data = this.chart.collectionView.list("items").nodes,
         y = pv.Scale.linear(yAxis.min(), yAxis.max()).nice().range(0, w),
         vis;
-
+        
     vis = new pv.Panel()
       .left(this.chart.margin.left)
       .right(this.chart.margin.right)
@@ -60,7 +60,7 @@ Barchart.prototype = {
         .bottom(0)
         .width(10)
         .height(function (d) {
-          return y(d.attributes[yAxis.key()]);
+          return y(d.value(yAxis.key()));
         })
         .fillStyle(function () {
           return this.parent.active() ? "orange" : "steelblue";
