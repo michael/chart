@@ -6,22 +6,24 @@ var Chart = function (element, options) {
   this.element = element;
   this.height = element.height();
   this.width = element.width();
-  this.collectionView = options.collectionView;
+  this.collection = options.collectionView;
   this.visualization = options.plotOptions.visualization;
   this.identityKeys = options.plotOptions.identifyBy;
+  
   this.groupKeys = options.plotOptions.groupBy;
+  
   this.measures = [];
-  this.margin = {top: 50, right: 50, bottom: 60, left: 80};
+  this.margin = {top: 10, right: 0, bottom: 15, left: 80};
   var that = this;
-
+  
   // use first property key as default identity
   if (this.identityKeys.length === 0) {
     this.identityKeys.push('name');
   }
   
   // init measures
-  options.plotOptions.measures.eachItem(function (propertyKey, index) {
-    that.measures.push(new Measure(that, that.collectionView.get("properties", propertyKey), index));
+  options.plotOptions.measures.eachItem(function (propertyKey, i) {
+    that.measures.push(new Measure(that, {property_key: propertyKey, index:i}));
   });
 };
 
@@ -47,12 +49,5 @@ Chart.prototype = {
     return $.map(identityKeys, function (k) {
       return item.value(k);
     }).join(", ");
-  },
-  getFirstPropertyKey: function () {
-    var keys = [];
-    $.each(this.collectionView.properties, function (key, val) {
-      keys.push(key);
-    });
-    return keys[0];
   }
 };

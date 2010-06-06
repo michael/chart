@@ -13,7 +13,7 @@ var Table = function(chart) {
 
 Table.prototype = {
   render: function() {
-    $('#chart').html(this.renderCollection(this.chart.collectionView));
+    $('#chart').html(this.renderCollection(this.chart.collection));
   },
   renderItem: function(i) {
     var that = this;
@@ -37,7 +37,6 @@ Table.prototype = {
     });
     
     str += '</tr></thead><tbody>';
-    
     c.list("items").each(function(index, item) {
       str += that.renderItem(item);
     });

@@ -23,12 +23,15 @@ Barchart.prototype = {
     
     var w = this.chart.plotWidth(),         
         h = this.chart.plotHeight(),    
-        yAxis = this.chart.measures[0],
+        yProp = this.chart.collection.get("properties", this.chart.measures[0].property),
         that = this,
-        data = this.chart.collectionView.list("items").nodes,
-        y = pv.Scale.linear(yAxis.min(), yAxis.max()).nice().range(0, w),
+        data = this.chart.collection.list("items").nodes,
+        yMin = yProp.aggregate(Aggregators.MIN),
+        yMax = yProp.aggregate(Aggregators.MAX),
+        y = pv.Scale.linear(yMin, yMax).nice().range(0, w),
         vis;
-        
+    
+    
     vis = new pv.Panel()
       .left(this.chart.margin.left)
       .right(this.chart.margin.right)
@@ -60,7 +63,7 @@ Barchart.prototype = {
         .bottom(0)
         .width(10)
         .height(function (d) {
-          return y(d.value(yAxis.key()));
+          return y(d.value(yProp.key()));
         })
         .fillStyle(function () {
           return this.parent.active() ? "orange" : "steelblue";
