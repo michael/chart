@@ -8,9 +8,7 @@ var Chart = function (element, options) {
   this.width = element.width();
   this.collection = options.collectionView;
   this.visualization = options.plotOptions.visualization;
-  this.identityKeys = options.plotOptions.identifyBy;
-  
-  this.groupKeys = options.plotOptions.groupBy;
+  this.identityKeys = options.plotOptions.identifyBy || [];
   
   this.measures = [];
   this.margin = {top: 10, right: 0, bottom: 15, left: 80};

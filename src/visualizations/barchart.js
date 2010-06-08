@@ -31,7 +31,6 @@ Barchart.prototype = {
         y = pv.Scale.linear(yMin, yMax).nice().range(0, w),
         vis;
     
-    
     vis = new pv.Panel()
       .left(this.chart.margin.left)
       .right(this.chart.margin.right)
