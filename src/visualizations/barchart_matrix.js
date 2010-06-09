@@ -5,6 +5,14 @@
 // -------------------------------------------
 // measure#1: 
 
+function round_float(x,n){
+  if(!parseInt(n))
+  	var n=0;
+  if(!parseFloat(x))
+  	return false;
+  return Math.round(x*Math.pow(10,n))/Math.pow(10,n);
+}
+
 var minnesota;
 
 var BarchartMatrix = function (chart) {
@@ -129,7 +137,7 @@ BarchartMatrix.prototype = {
         .textAlign(function() { return panel.i() < 0 ? "left" : "right"; })
         .textStyle(function() { return panel.i() < 0 ? "#999" : "#000"; })
         .text(function(d) { return panel.i() < 0 ? ""
-            : d.value_names[panel.i()] + ": "+ d.values[panel.i()]; });
+            : d.value_names[panel.i()] + ": "+ round_float(d.values[panel.i()], 2); });
 
     panel.add(pv.Label)
       .bottom(-1)
@@ -138,7 +146,7 @@ BarchartMatrix.prototype = {
       // .right(function() { return panel.i() < 0 ? null : 0 })
       .textStyle(function() { return panel.i() < 0 ? "#999" : "#000"; })
       .textAlign('left')
-      .text(function(d) { return d.name+" ("+d.accuracy+")"; });
+      .text(function(d) { return d.name+" ("+round_float(d.accuracy, 2)+")"; });
     
 
     vis.render();
