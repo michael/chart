@@ -22,7 +22,7 @@ Table.prototype = {
       if (i.type(key) === 'collection') {
         str += '<td>'+that.renderCollection(i.node(key))+'</td>';
       } else {
-        str += '<td>'+i.value(key)+'</td>';
+        str += '<td>'+i.values(key).join('<br/>')+'</td>';
       }
     });
     str += '</tr>';
