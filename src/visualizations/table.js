@@ -15,30 +15,36 @@ Table.prototype = {
   render: function() {
     $('#chart').html(this.renderCollection(this.chart.collection));
   },
-  renderItem: function(i) {
+  renderItem: function(c, i) {
     var that = this;
     str = '<tr>';
-    $.each(i.get("attributes"), function(key, attr) {
+    
+    c.all("properties").eachKey(function(key, attr) {
       if (i.type(key) === 'collection') {
-        str += '<td>'+that.renderCollection(i.node(key))+'</td>';
+        // str += '<td>'+that.renderCollection(i.value(key))+'</td>';
       } else {
-        str += '<td>'+i.values(key).join('<br/>')+'</td>';
+        str += '<td>'        
+        i.values(key).each(function(index, v) {
+          str += v+'<br/>';
+        });
+        str += '</td>'
       }
     });
+    
     str += '</tr>';
     return str;
   },
   renderCollection: function(c) {
     var that = this;
     
-    str = '<table><thead><tr>';
-    c.list("properties").each(function(index, p) {
-      str += '<th>'+p.name()+'</th>';
+    str = '<h1>'+c.all('items').length+' items</h1><table><thead><tr>';
+    c.all("properties").each(function(index, p) {
+      str += '<th>'+p.name+'</th>';
     });
     
     str += '</tr></thead><tbody>';
-    c.list("items").each(function(index, item) {
-      str += that.renderItem(item);
+    c.all("items").each(function(index, item) {
+      str += that.renderItem(c, item);
     });
     
     str += '</tbody></table>';

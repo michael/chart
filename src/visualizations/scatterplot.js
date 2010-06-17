@@ -20,6 +20,7 @@ var Scatterplot = function (chart) {
 };
 
 Scatterplot.prototype.render = function() {
+
   var w = this.chart.plotWidth()-15,
       h = this.chart.plotHeight()-5,
       that = this,
@@ -35,7 +36,7 @@ Scatterplot.prototype.render = function() {
   x = pv.Scale.linear(xMin, xMax).range(0, w);
   y = pv.Scale.linear(yMin, yMax).range(0, h);
   
-  data = this.chart.collection.list("items").nodes;
+  data = this.chart.collection.all("items").values();
 
   /* The root panel. */
   var vis = new pv.Panel()
@@ -79,8 +80,8 @@ Scatterplot.prototype.render = function() {
       .event("zoom", transform)
   
       .add(pv.Dot)
-        .left(function(d) { return x(d.value(xProp.key())); })
-        .bottom(function(d) { return y(d.value(yProp.key())); })
+        .left(function(d) { return x(d.value(xProp.key)); })
+        .bottom(function(d) { return y(d.value(yProp.key)); })
         .radius(function() { return 5 / this.scale; })
         .fillStyle(function() { return this.parent.active() ? "rgba(30, 120, 180, .9)" : "rgba(30, 120, 180, 0.4)"; })
           .event("mouseover", function() { return this.parent.active(true); })

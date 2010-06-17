@@ -25,7 +25,7 @@ Barchart.prototype = {
         h = this.chart.plotHeight(),    
         yProp = this.chart.collection.get("properties", this.chart.measures[0].property),
         that = this,
-        data = this.chart.collection.list("items").nodes,
+        data = this.chart.collection.all("items").values(),
         yMin = yProp.aggregate(Aggregators.MIN),
         yMax = yProp.aggregate(Aggregators.MAX),
         y = pv.Scale.linear(yMin, yMax).nice().range(0, w),
@@ -62,7 +62,7 @@ Barchart.prototype = {
         .bottom(0)
         .width(10)
         .height(function (d) {
-          return y(d.value(yProp.key()));
+          return y(d.value(yProp.key));
         })
         .fillStyle(function () {
           return this.parent.active() ? "orange" : "steelblue";
