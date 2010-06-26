@@ -22,7 +22,7 @@ var Scatterplot = function (chart) {
 Scatterplot.prototype.render = function() {
 
   var w = this.chart.plotWidth()-15,
-      h = this.chart.plotHeight()-5,
+      h = this.chart.plotHeight()-25,
       that = this,
       xProp = this.chart.collection.get("properties", this.chart.measures[0].property),
       yProp = this.chart.collection.get("properties", this.chart.measures[1].property),
@@ -30,13 +30,14 @@ Scatterplot.prototype.render = function() {
       xMax = xProp.aggregate(Aggregators.MAX),
       yMin = yProp.aggregate(Aggregators.MIN),
       yMax = yProp.aggregate(Aggregators.MAX),
-      x, y, data;
+      x, y, items,
+      formatter = pv.Format.number();
       
   /* Sizing parameters and scales. */
   x = pv.Scale.linear(xMin, xMax).range(0, w);
   y = pv.Scale.linear(yMin, yMax).range(0, h);
   
-  data = this.chart.collection.all("items").values();
+  items = this.chart.collection.all("items").values();
 
   /* The root panel. */
   var vis = new pv.Panel()
@@ -45,7 +46,7 @@ Scatterplot.prototype.render = function() {
       .left(this.chart.margin.left)
       .right(this.chart.margin.right)
       .top(this.chart.margin.top)
-      .bottom(this.chart.margin.bottom)
+      .bottom(this.chart.margin.bottom+20)
       .strokeStyle("#aaa")
       .canvas('chart');
 
@@ -56,7 +57,8 @@ Scatterplot.prototype.render = function() {
       .left(function(d) { return parseInt(x(d), 10)+0.5; })
     .anchor("bottom").add(pv.Label)
       .text(x.tickFormat)
-      .font('12px Century Gothic');
+      .textStyle("#777")
+      .font('11px Helvetica');
   
   /* Y-axis and ticks. */
   vis.add(pv.Rule)
@@ -65,12 +67,31 @@ Scatterplot.prototype.render = function() {
       .bottom(function(d) { return parseInt(y(d), 10)+0.5; })
     .anchor("left").add(pv.Label)
       .text(y.tickFormat)
-      .font('12px Century Gothic');
+      .textStyle("#777")
+      .font('11px Helvetica');
+  
+  // xAxis Name
+  vis.add(pv.Label)
+    .text(xProp.name)
+    .left(w/2)
+    .bottom(-35)
+    .textStyle('#555')
+    .font('bold 14px Helvetica');
+  
+  // yAxis Name
+  vis.add(pv.Label)
+    .text(yProp.name)
+    .left(-85)
+    .top(h/2)
+    .textAngle(-Math.PI / 2)
+    .textStyle('#555')
+    .font('bold 14px Helvetica');
+    
   
   /* The dot plot. */
   vis.add(pv.Panel)
       .overflow("hidden")
-      .data(data)
+      .data(items)
       .add(pv.Panel) // group dot and label for redraw
         .def('active', false)
       // .events("all") // - eats all the events that should reach dots.
@@ -87,9 +108,11 @@ Scatterplot.prototype.render = function() {
           .event("mouseover", function() { return this.parent.active(true); })
           .event("mouseout", function() { return this.parent.active(false); })
       .anchor("right").add(pv.Label)
-        .text(function(d) { return that.chart.identify(d); })
+        .text(function(d) { 
+          return d.identify()+" ("+formatter.format(d.value(xProp.key))+" / "+formatter.format(d.value(yProp.key))+")"; 
+        })
         .strokeStyle("green")
-        .font('12px Century Gothic')
+        .font('11px Helvetica')
         .visible(function() { return this.parent.active(); });
     
   /** Update the x- and y-scale domains per the new transform. */

@@ -21,7 +21,7 @@ Table.prototype = {
     
     c.all("properties").eachKey(function(key, attr) {
       if (i.type(key) === 'collection') {
-        // str += '<td>'+that.renderCollection(i.value(key))+'</td>';
+        str += '<td>'+that.renderCollection(i.first(key))+'</td>';
       } else {
         str += '<td>'        
         i.values(key).each(function(index, v) {
@@ -37,7 +37,7 @@ Table.prototype = {
   renderCollection: function(c) {
     var that = this;
     
-    str = '<h1>'+c.all('items').length+' items</h1><table><thead><tr>';
+    str = '<table><thead><tr>';
     c.all("properties").each(function(index, p) {
       str += '<th>'+p.name+'</th>';
     });

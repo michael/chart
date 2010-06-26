@@ -32,7 +32,9 @@ BarchartMatrix.prototype = {
   render: function () {
     console.log("trying to render...");
     
+    // make sure if the specified properties are valid
     if (!this.chart.measures[0]) return;
+    
     var w = 200,
         h = 30,
         numberFormat = pv.Format.number(),
@@ -40,8 +42,8 @@ BarchartMatrix.prototype = {
         property = this.chart.measures[0].property,
         nested_property = this.chart.measures[0].properties[1];
     
-    // make sure if the specified properties are valid
     if (!this.chart.collection.get('properties', property)) return;
+    if (!this.chart.collection.get('properties', property).type === 'collection') return;
     
     /* Color by maximum number of people employed in that job. */
     var c = pv.Scale.log(minnesota, function(d) { return pv.max(d.values) })
@@ -51,16 +53,17 @@ BarchartMatrix.prototype = {
     // prepare the data
     var data = [];
     
-    var items = this.chart.collection.list('items');
+    var items = this.chart.collection.all('items');
+    
     // sort by name
     items.sort(function(item1, item2) {
-      var value1 = item1.value('source'),
-          value2 = item2.value('source');
+      var value1 = item1.value.value('source'),
+          value2 = item2.value.value('source');
       return value1 === value2 ? 0 : (value1 < value2 ? -1 : 1);
     });
     
     items.each(function(index, item) {
-      var sub_items = item.node(property).list('items');
+      var sub_items = item.first(property).all('items');
 
       var values = [];
       var value_names = [];

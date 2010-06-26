@@ -11,7 +11,7 @@ var Chart = function (element, options) {
   this.identityKeys = options.plotOptions.identifyBy || [];
   
   this.measures = [];
-  this.margin = {top: 10, right: 0, bottom: 15, left: 80};
+  this.margin = {top: 10, right: 0, bottom: 15, left: 100};
   var that = this;
   
   // use first property key as default identity

@@ -1,9 +1,10 @@
 // -------------------------------------------
 // supports
 // -------------------------------------------
-// 1 quantitative measure
+// 2 quantitative measure
 // -------------------------------------------
 // measure#1: quantitative
+// allow multi-series (grouped barchart)
 
 var Barchart = function (chart) {
   var that = this;
@@ -21,26 +22,28 @@ Chart.visualizations.barchart = {
 Barchart.prototype = {
   render: function () {
     
-    var w = this.chart.plotWidth(),         
-        h = this.chart.plotHeight(),    
+    var width = this.chart.plotWidth()-50,         
+        height = this.chart.plotHeight()-110,    
         yProp = this.chart.collection.get("properties", this.chart.measures[0].property),
         that = this,
-        data = this.chart.collection.all("items").values(),
+        items = this.chart.collection.all("items").values(),
         yMin = yProp.aggregate(Aggregators.MIN),
         yMax = yProp.aggregate(Aggregators.MAX),
-        y = pv.Scale.linear(yMin, yMax).nice().range(0, w),
+        y = pv.Scale.linear(yMin, yMax).nice().range(0, height-20),
+        x = pv.Scale.linear(0, items.length).range(10, width),
+        formatter = pv.Format.number(),
         vis;
-    
+        
     vis = new pv.Panel()
       .left(this.chart.margin.left)
       .right(this.chart.margin.right)
       .top(this.chart.margin.top)
-      .bottom(this.chart.margin.bottom)
+      .bottom(100)
       .width(4000)
-      .height(h)
+      .height(height)
       .canvas('chart');
       
-    // yAxis
+    // yAxis ticks
     vis.add(pv.Rule)
         .data(y.ticks())
         .strokeStyle("#eee")
@@ -49,10 +52,22 @@ Barchart.prototype = {
           return parseInt(y(d), 10) + 0.5;
         })
       .anchor("left").add(pv.Label)
-        .font('12px Century Gothic');
-    
+        .text(y.tickFormat)
+        .font('11px Helvetica')
+        .textStyle('#777');
+  
+    // yAxis Name
+    vis.add(pv.Label)
+      .text(yProp.name)
+      .left(-85)
+      .top(height/2)
+      .textAngle(-Math.PI / 2)
+      .textStyle('#555')
+      .font('bold 14px Helvetica');
+        
+    // actual data
     vis.add(pv.Panel)
-        .data(data)
+        .data(items)
         .left(function () {
           return this.index * 15; 
         })
@@ -65,7 +80,7 @@ Barchart.prototype = {
           return y(d.value(yProp.key));
         })
         .fillStyle(function () {
-          return this.parent.active() ? "orange" : "steelblue";
+          return this.parent.active() ? "#C9EF5E" : "#99B24F";
         }) 
         .event("mouseover", function () {
           return this.parent.active(true);
@@ -74,14 +89,25 @@ Barchart.prototype = {
           return this.parent.active(false); 
         })
       .anchor("top").add(pv.Label)
-        .bottom(20)
+        .bottom(-10)
+        .left(0)
+        .textAlign("right")
+        .textAngle(-Math.PI / 2)
         .text(function (d) {
-          return that.chart.identify(d);
+          return d.identify();
         })
-        .font('12px Century Gothic')
-        .visible(function () {
-          return this.parent.active();
-        });
+        .textStyle(function(d) {
+          return this.parent.active() ? '#000' : '#777'
+        })
+        .font('11px Helvetica')
+      .anchor("top")
+        .add(pv.Label)
+          .text(function (d) {
+            return formatter.format(d.value(yProp.key));
+          })
+          .bottom(function (d) { return y(d.value(yProp.key))+20; })
+          .font('bold 11px Helvetica')
+          .visible(function () { return this.parent.active(); });
     vis.render();
   }
 };
